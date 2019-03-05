@@ -29,7 +29,7 @@ ns.model = (function() {
                 $event_pump.trigger('model_error', [xhr, textStatus, errorThrown]);
             })
         },
-        create: function(fname, lname) {
+        create: function(fio, birthday, office) {
             let ajax_options = {
                 type: 'POST',
                 url: 'api/people',
@@ -37,8 +37,9 @@ ns.model = (function() {
                 contentType: 'application/json',
                 dataType: 'json',
                 data: JSON.stringify({
-                    'fname': fname,
-                    'lname': lname
+                    'fio': fio,
+                    'birthday': birthday,
+                    'office': office
                 })
             };
             $.ajax(ajax_options)
@@ -49,16 +50,17 @@ ns.model = (function() {
                 $event_pump.trigger('model_error', [xhr, textStatus, errorThrown]);
             })
         },
-        update: function(fname, lname) {
+        update: function(fio, birthday, office) {
             let ajax_options = {
                 type: 'PUT',
-                url: 'api/people/' + lname,
+                url: 'api/people/' + birthday,
                 accepts: 'application/json',
                 contentType: 'application/json',
                 dataType: 'json',
                 data: JSON.stringify({
-                    'fname': fname,
-                    'lname': lname
+                    'fio': fio,
+                    'birthday': birthday,
+                    'office': office
                 })
             };
             $.ajax(ajax_options)
@@ -69,10 +71,10 @@ ns.model = (function() {
                 $event_pump.trigger('model_error', [xhr, textStatus, errorThrown]);
             })
         },
-        'delete': function(lname) {
+        'delete': function(birthday) {
             let ajax_options = {
                 type: 'DELETE',
-                url: 'api/people/' + lname,
+                url: 'api/people/' + birthday,
                 accepts: 'application/json',
                 contentType: 'plain/text'
             };
@@ -91,18 +93,22 @@ ns.model = (function() {
 ns.view = (function() {
     'use strict';
 
-    let $fname = $('#fname'),
-        $lname = $('#lname');
+    let $person_id = $('#person_id'),   //////////
+        $fio = $('#fio'),
+        $birthday = $('#birthday'),
+        $office = $('#office');
 
     // return the API
     return {
         reset: function() {
-            $lname.val('');
-            $fname.val('').focus();
+            $fio.val('').focus();
+            $birthday.val('');
+            $office.val('');
         },
-        update_editor: function(fname, lname) {
-            $lname.val(lname);
-            $fname.val(fname).focus();
+        update_editor: function(fio, birthday, office) {
+            $fio.val(fio).focus();
+            $birthday.val(birthday);
+            $office.val(office);
         },
         build_table: function(people) {
             let rows = ''
@@ -113,7 +119,7 @@ ns.view = (function() {
             // did we get a people array?
             if (people) {
                 for (let i=0, l=people.length; i < l; i++) {
-                    rows += `<tr><td class="fname">${people[i].fname}</td><td class="lname">${people[i].lname}</td><td>${people[i].timestamp}</td></tr>`;
+                    rows += `<tr><td class="id">${people[i].person_id}</td><td class="fio">${people[i].fio}</td><td class="birthday">${people[i].birthday}</td><td class="office">${people[i].office}</td><td>${people[i].timestamp}</td></tr>`;
                 }
                 $('table > tbody').append(rows);
             }
@@ -136,8 +142,10 @@ ns.controller = (function(m, v) {
     let model = m,
         view = v,
         $event_pump = $('body'),
-        $fname = $('#fname'),
-        $lname = $('#lname');
+        $person_id = $('#person_id'),              ////////////
+        $fio = $('#fio'),                       // поменялось местами
+        $birthday = $('#birthday'),
+        $office = $('#office');
 
     // Get the data from the model after the controller is done initializing
     setTimeout(function() {
@@ -145,47 +153,52 @@ ns.controller = (function(m, v) {
     }, 100)
 
     // Validate input
-    function validate(fname, lname) {
-        return fname !== "" && lname !== "";
+    function validate(person_id, fio, birthday, office) {
+        return person_id !== "" && fio !== "" && birthday !== "" && office !== "";
     }
 
     // Create our event handlers
     $('#create').click(function(e) {
-        let fname = $fname.val(),
-            lname = $lname.val();
+        let person_id = $person_id.val(),
+            fio = $fio.val(),
+            office = $office.val(),
+            birthday = $birthday.val();
 
         e.preventDefault();
 
-        if (validate(fname, lname)) {
-            model.create(fname, lname)
+        if (validate(person_id, fio, birthday, office )) {
+            model.create(person_id, fio, birthday, office)
         } else {
             alert('Problem with first or last name input');
         }
     });
 
     $('#update').click(function(e) {
-        let fname = $fname.val(),
-            lname = $lname.val();
+        let person_id = $person_id.val(),
+            fio = $fio.val(),
+            birthday = $birthday.val(),
+            office = $office.val();
+;
 
         e.preventDefault();
 
-        if (validate(fname, lname)) {
-            model.update(fname, lname)
+        if (validate(person_id, fio, birthday, office )) {
+            model.update(person_id, fio, birthday, office )
         } else {
-            alert('Problem with first or last name input');
+            alert('Problem fio input');
         }
         e.preventDefault();
     });
 
     $('#delete').click(function(e) {
-        let lname = $lname.val();
+        let fio = $fio.val();
 
         e.preventDefault();
 
-        if (validate('placeholder', lname)) {
-            model.delete(lname)
+        if (validate('placeholder', fio)) {
+            model.delete(fio)
         } else {
-            alert('Problem with first or last name input');
+            alert('Problem fio input');
         }
         e.preventDefault();
     });
@@ -196,20 +209,32 @@ ns.controller = (function(m, v) {
 
     $('table > tbody').on('dblclick', 'tr', function(e) {
         let $target = $(e.target),
-            fname,
-            lname;
+            person_id,              //////////////
+            fio,
+            birthday,
+            office;
 
-        fname = $target
+        person_id = $target
             .parent()
-            .find('td.fname')
+            .find('td.person_id')
             .text();
 
-        lname = $target
+        fio = $target
             .parent()
-            .find('td.lname')
+            .find('td.fio')
             .text();
 
-        view.update_editor(fname, lname);
+        office = $target
+            .parent()
+            .find('td.birthday')
+            .text();
+
+        birthday = $target
+            .parent()
+            .find('td.office')
+            .text();
+
+        view.update_editor(fio, birthday,office );
     });
 
     // Handle the model events
